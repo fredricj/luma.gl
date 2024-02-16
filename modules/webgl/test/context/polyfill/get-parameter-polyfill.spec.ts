@@ -4,8 +4,7 @@
 import {getParameterPolyfill} from '@luma.gl/webgl/context/polyfill/get-parameter-polyfill';
 import {GL} from '@luma.gl/constants';
 import test from 'tape-promise/tape';
-
-import {fixture} from 'test/setup';
+import {webglDevice} from '@luma.gl/test-utils/create-test-device';
 
 const WEBGL_PARAMETER_KEYS = [
   // WebGL2 context parameters
@@ -59,26 +58,11 @@ test('getParameterPolyfill#import', (t) => {
   t.end();
 });
 
-test('getParameterPolyfill#WebGL1', (t) => {
-  const {gl} = fixture;
+test('getParameterPolyfill#WebGL', (t) => {
+  const {gl} = webglDevice;
   const originalGetParameterFunc = gl.getParameter.bind(gl);
   for (const pname of WEBGL_PARAMETER_KEYS) {
     const value = getParameterPolyfill(gl, originalGetParameterFunc, pname);
-    t.ok(typeof value !== 'undefined', 'Returns valid value');
-  }
-  t.end();
-});
-
-test('getParameterPolyfill#WebGL2', (t) => {
-  const {gl2} = fixture;
-  if (!gl2) {
-    t.comment('WebGL2 not available, skipping tests');
-    t.end();
-    return;
-  }
-  const originalGetParameterFunc = gl2.getParameter.bind(gl2);
-  for (const pname of WEBGL_PARAMETER_KEYS) {
-    const value = getParameterPolyfill(gl2, originalGetParameterFunc, pname);
     t.ok(typeof value !== 'undefined', 'Returns valid value');
   }
   t.end();

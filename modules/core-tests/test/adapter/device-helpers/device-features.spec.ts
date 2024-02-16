@@ -1,5 +1,5 @@
 import test from 'tape-promise/tape';
-import {webgl1Device, webgl2Device} from '@luma.gl/test-utils';
+import {webglDevice} from '@luma.gl/test-utils';
 import {DeviceFeature} from '@luma.gl/core';
 
 // true: always supported in WebGL2, false: never supported in WebGL1
@@ -31,29 +31,29 @@ const WEBGL2_ONLY_FEATURES: DeviceFeature[] = ['webgl2', 'texture-renderable-flo
 
 test('WebGLDevice#features (query for unknown features)', (t) => {
   // @ts-expect-error
-  t.notOk(webgl1Device.features.has('unknown'), 'features.has should return false');
+  t.notOk(webglDevice.features.has('unknown'), 'features.has should return false');
   // @ts-expect-error
-  t.notOk(webgl1Device.features.has(''), 'features.has should return false');
+  t.notOk(webglDevice.features.has(''), 'features.has should return false');
   t.end();
 });
 
 test('WebGLDevice#features (WebGL1)', (t) => {
-  t.notOk(webgl1Device.features.has('webgl2'), 'features.has should return false');
+  t.notOk(webglDevice.features.has('webgl2'), 'features.has should return false');
   t.notOk(
-    webgl1Device.features.has('texture-renderable-float32-webgl'),
+    webglDevice.features.has('texture-renderable-float32-webgl'),
     'features.has should return false'
   );
   t.end();
 });
 
 test('WebGLDevice#hasFeatures (WebGL2)', (t) => {
-  if (webgl2Device) {
+  if (webglDevice) {
     t.ok(
-      webgl2Device.features.has('vertex-array-object-webgl1'),
+      webglDevice.features.has('vertex-array-object-webgl1'),
       'features.has should return true'
     );
     t.ok(
-      webgl2Device.features.has('instanced-rendering-webgl1'),
+      webglDevice.features.has('instanced-rendering-webgl1'),
       'features.has should return true'
     );
   }
@@ -63,7 +63,7 @@ test('WebGLDevice#hasFeatures (WebGL2)', (t) => {
 test('WebGLDevice#hasFeature(WebGL1)', (t) => {
   for (const feature of WEBGL2_ONLY_FEATURES) {
     t.equal(
-      webgl1Device.features.has(feature),
+      webglDevice.features.has(feature),
       false,
       `${feature} is never supported under WebGL1`
     );
@@ -72,10 +72,10 @@ test('WebGLDevice#hasFeature(WebGL1)', (t) => {
 });
 
 test('WebGLDevice#hasFeature(WebGL2)', (t) => {
-  if (webgl2Device) {
+  if (webglDevice) {
     for (const feature of WEBGL2_ALWAYS_FEATURES) {
       t.equal(
-        webgl2Device.features.has(feature),
+        webglDevice.features.has(feature),
         true,
         `${feature} is always supported under WebGL2`
       );

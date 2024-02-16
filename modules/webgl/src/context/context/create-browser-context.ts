@@ -63,21 +63,11 @@ export function createBrowserContext(
   // Create the desired context
   let gl: WebGLRenderingContext | WebGL2RenderingContext | null = null;
 
-  if (props.type === 'webgl2') {
-    props = {...props, webgl1: false};
-  }
-  if (props.type === 'webgl1') {
-    props = {...props, webgl2: false};
-  }
-
   // props.failIfMajorPerformanceCaveat = true;
 
   // Prefer webgl2 over webgl1 if both are acceptable
-  if (!gl && props.webgl2) {
+  if (!gl) {
     gl = canvas.getContext('webgl2', props) as WebGL2RenderingContext;
-  }
-  if (!gl && props.webgl1) {
-    gl = canvas.getContext('webgl', props) as WebGLRenderingContext;
   }
 
   // Software GPU

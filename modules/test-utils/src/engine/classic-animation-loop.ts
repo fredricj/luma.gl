@@ -41,7 +41,7 @@ export type ClassicAnimationProps = AnimationProps & {
   stop: () => ClassicAnimationLoop;
 
   /** @deprecated Use .device */
-  gl: WebGLRenderingContext;
+  gl: WebGL2RenderingContext;
   /** @deprecated Will be removed */
   framebuffer: unknown;
 
@@ -75,7 +75,7 @@ export type ClassicAnimationLoopProps = {
   useDevicePixels?: number | boolean;
 
   /** @deprecated Use .device */
-  gl?: WebGLRenderingContext | null;
+  gl?: WebGL2RenderingContext | null;
   /** @deprecated Will be removed */
   createFramebuffer?: boolean;
 };
@@ -137,7 +137,7 @@ export class ClassicAnimationLoop {
   // _gpuTimeQuery: Query | null = null;
 
   /** @deprecated */
-  gl: WebGLRenderingContext;
+  gl: WebGL2RenderingContext;
 
   /*
    */
