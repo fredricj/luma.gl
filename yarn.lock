@@ -3374,6 +3374,21 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@luma.gl/text@workspace:modules/text":
+  version: 0.0.0-use.local
+  resolution: "@luma.gl/text@workspace:modules/text"
+  dependencies:
+    "@luma.gl/test-utils": "npm:9.0.0-beta.5"
+    "@mapbox/tiny-sdf": "npm:^2.0.5"
+    "@math.gl/core": "npm:4.0.0"
+  peerDependencies:
+    "@luma.gl/core": ^9.0.0-beta.4
+    "@luma.gl/engine": ^9.0.0-beta.4
+    "@luma.gl/shadertools": ^9.0.0-beta.4
+    "@luma.gl/webgl": ^9.0.0-beta.4
+  languageName: unknown
+  linkType: soft
+
 "@luma.gl/webgl@npm:9.0.0-beta.5, @luma.gl/webgl@workspace:modules/webgl":
   version: 0.0.0-use.local
   resolution: "@luma.gl/webgl@workspace:modules/webgl"
@@ -3396,6 +3411,13 @@ __metadata:
     "@luma.gl/core": ^9.0.0-beta.4
   languageName: unknown
   linkType: soft
+
+"@mapbox/tiny-sdf@npm:^2.0.5":
+  version: 2.0.6
+  resolution: "@mapbox/tiny-sdf@npm:2.0.6"
+  checksum: 10c0/cb272578a30c88d6694937af9b084106aa251e92c71089e7d57b0df8152fd0ce0598d5816182a4cd478dc40b188ea680cb6d53f4385107719424beabe7ed4e13
+  languageName: node
+  linkType: hard
 
 "@math.gl/core@npm:3.6.3":
   version: 3.6.3
