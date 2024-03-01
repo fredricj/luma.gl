@@ -38,7 +38,7 @@ const random = makeRandomNumberGenerator();
 // }
 // `;
 
-const VS_WGSL = /* WGSL */ `\
+const WGSL = /* WGSL */ `\
 struct AppUniforms {
   modelMatrix: mat4x4<f32>,
   viewMatrix: mat4x4<f32>,
@@ -65,7 +65,7 @@ struct FragmentInputs {
 }
 
 @vertex
-fn main(inputs: VertexInputs) -> FragmentInputs {
+fn vertexMain(inputs: VertexInputs) -> FragmentInputs {
   var outputs: FragmentInputs;
 
   outputs.normal = (app.modelMatrix * vec4<f32>(inputs.normals, 0.0)).xyz;
@@ -80,9 +80,6 @@ fn main(inputs: VertexInputs) -> FragmentInputs {
   outputs.Position = app.projectionMatrix * app.viewMatrix * (app.modelMatrix * inputs.positions + offset);
   return outputs;
 }
-`;
-
-const FS_WGSL = /* WGSL */ `\
 
 struct DirlightUniforms {
   lightDirection: vec3<f32>,
@@ -96,14 +93,8 @@ fn dirlight_filterColor(color: vec4<f32>, normal: vec3<f32>) -> vec4<f32> {
   return vec4<f32>(color.rgb * d, color.a);
 }
 
-struct FragmentInputs {
-  @builtin(position) Position : vec4<f32>,
-  @location(0) normal: vec3<f32>,
-  @location(1) color : vec4<f32>,
-}
-
 @fragment
-fn main(inputs: FragmentInputs) -> @location(0) vec4<f32> { 
+fn fragmentMain(inputs: FragmentInputs) -> @location(0) vec4<f32> { 
   return dirlight_filterColor(inputs.color, inputs.normal); 
 }
 `;
@@ -199,8 +190,11 @@ class InstancedCube extends Model {
     // Model
     super(device, {
       ...props,
-      vs: {wgsl: VS_WGSL, glsl: VS_GLSL},
-      fs: {wgsl: FS_WGSL, glsl: FS_GLSL},
+      source: WGSL,
+      vs: VS_GLSL,
+      fs: FS_GLSL,
+      vsEntryPoint: 'vertexMain',
+      fsEntryPoint: 'fragmentMain',
       modules: device.info.type !== 'webgpu' ? [dirlight, picking] : [],
       instanceCount: SIDE * SIDE,
       geometry: new CubeGeometry({indices: true}),

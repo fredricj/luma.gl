@@ -119,8 +119,14 @@ export class Model {
 
   readonly device: Device;
   readonly id: string;
+
+  /** WGSL source */
+  readonly source: string
+  /** GLSL/WGSL vs */
   readonly vs: string;
+  /** GLSL/WGSL fs */
   readonly fs: string;
+
   readonly pipelineFactory: PipelineFactory;
   readonly shaderFactory: ShaderFactory;
   userData: {[key: string]: any} = {};
@@ -169,15 +175,18 @@ export class Model {
   /** ShaderInputs instance */
   shaderInputs: ShaderInputs;
 
-  _uniformStore: UniformStore;
+  protected _uniformStore: UniformStore;
 
-  _pipelineNeedsUpdate: string | false = 'newly created';
-  _attributeInfos: Record<string, AttributeInfo> = {};
-  _gpuGeometry: GPUGeometry | null = null;
-  private _getModuleUniforms: (props?: Record<string, Record<string, any>>) => Record<string, any>;
-  private props: Required<ModelProps>;
+  protected _pipelineNeedsUpdate: string | false = 'newly created';
+  protected _attributeInfos: Record<string, AttributeInfo> = {};
+  protected _gpuGeometry: GPUGeometry | null = null;
 
-  private _destroyed = false;
+  protected _getModuleUniforms: (
+    props?: Record<string, Record<string, any>>
+  ) => Record<string, any>;
+  protected props: Required<ModelProps>;
+
+  protected _destroyed = false;
 
   constructor(device: Device, props: ModelProps) {
     this.props = {...Model.defaultProps, ...props};
@@ -193,19 +202,26 @@ export class Model {
     );
     this.setShaderInputs(props.shaderInputs || new ShaderInputs(moduleMap));
 
-    const isWebGPU = this.device.info.type === 'webgpu';
-    // TODO - hack to support unified WGSL shader
-    // TODO - this is wrong, compile a single shader
-    if (this.props.source) {
-      if (isWebGPU) {
-        this.props.shaderLayout ||= getShaderLayoutFromWGSL(this.props.source);
-      }
-      this.props.fs = this.props.source;
-      this.props.vs = this.props.source;
+    // Select shader source
+    switch (this.device.info.type) {
+      case 'webgpu':
+        // If props.source is supplied, we use it in WebGPU (Support unified WGSL shader)
+        if (this.props.source) {
+          // compile a single shader
+          this.props.shaderLayout ||= getShaderLayoutFromWGSL(this.props.source);
+          delete this.props.fs;
+          delete this.props.vs;
+        }
+        break;
+
+      case 'webgl':
+        delete this.props.source;
+        break;
     }
 
     // Support WGSL shader layout introspection
-    if (isWebGPU && typeof this.props.vs !== 'string') {
+    // TODO - we need info from fragment shader too.
+    if (typeof this.props.vs !== 'string') {
       this.props.shaderLayout ||= getShaderLayoutFromWGSL(this.props.vs.wgsl);
     }
 
@@ -213,27 +229,36 @@ export class Model {
     const platformInfo = getPlatformInfo(device);
 
     // Extract modules from shader inputs if not supplied
+    // TODO - should we concatenate?
     const modules =
       (this.props.modules?.length > 0 ? this.props.modules : this.shaderInputs?.getModules()) || [];
 
-    const {vs, fs, getUniforms} = this.props.shaderAssembler.assembleShaderPair({
-      platformInfo,
-      ...this.props,
-      modules
-    });
+    if (props.source) {
+      const {source, getUniforms} = this.props.shaderAssembler.assembleShader({
+        platformInfo,
+        ...this.props,
+        modules
+      });
+      this.source = source;
+      this._getModuleUniforms = getUniforms;
+    } else {
+      const {vs, fs, getUniforms} = this.props.shaderAssembler.assembleShaderPair({
+        platformInfo,
+        ...this.props,
+        modules
+      });
+      this.vs = vs;
+      this.fs = fs;
+      this._getModuleUniforms = getUniforms;
+    }
 
-    this.vs = vs;
-    this.fs = fs;
-    this._getModuleUniforms = getUniforms;
-
+    this.topology = this.props.topology;
+    this.parameters = this.props.parameters;
+    this.bufferLayout = this.props.bufferLayout;
     this.vertexCount = this.props.vertexCount;
     this.instanceCount = this.props.instanceCount;
 
-    this.topology = this.props.topology;
-    this.bufferLayout = this.props.bufferLayout;
-    this.parameters = this.props.parameters;
-
-    // Geometry, if provided, sets topology and vertex cound
+    // Geometry, if provided, sets topology and vertex count
     if (props.geometry) {
       this._gpuGeometry = this.setGeometry(props.geometry);
     }
@@ -262,10 +287,6 @@ export class Model {
     if (props.instanceCount) {
       this.setInstanceCount(props.instanceCount);
     }
-    // @ts-expect-error
-    if (props.indices) {
-      throw new Error('Model.props.indices removed. Use props.indexBuffer');
-    }
     if (props.indexBuffer) {
       this.setIndexBuffer(props.indexBuffer);
     }
@@ -280,8 +301,8 @@ export class Model {
     if (props.bindings) {
       this.setBindings(props.bindings);
     }
-    if (props.uniforms) {
-      this.setUniforms(props.uniforms);
+    if (props.uniforms && !isObjectEmpty(props.uniforms)) {
+      this.setUniformsWebGL(props.uniforms);
     }
     if (props.moduleSettings) {
       log.warn('Model.props.moduleSettings is deprecated. Use Model.shaderInputs.setProps()')();
@@ -369,7 +390,7 @@ export class Model {
    * Geometry, sets several attributes, indexBuffer, and also vertex count
    * @note Can trigger a pipeline rebuild / pipeline cache fetch on WebGPU
    */
-  _setGeometryAttributes(gpuGeometry: GPUGeometry): void {
+  protected _setGeometryAttributes(gpuGeometry: GPUGeometry): void {
     // Filter geometry attribute so that we don't issue warnings for unused attributes
     const attributes = {...gpuGeometry.attributes};
     for (const [attributeName] of Object.entries(attributes)) {
@@ -593,11 +614,11 @@ export class Model {
     }
   }
 
-  _setPipelineNeedsUpdate(reason: string): void {
+  protected _setPipelineNeedsUpdate(reason: string): void {
     this._pipelineNeedsUpdate = this._pipelineNeedsUpdate || reason;
   }
 
-  _updatePipeline(): RenderPipeline {
+  protected _updatePipeline(): RenderPipeline {
     if (this._pipelineNeedsUpdate) {
       let prevShaderVs: Shader | null = null;
       let prevShaderFs: Shader | null = null;
@@ -612,18 +633,21 @@ export class Model {
 
       this._pipelineNeedsUpdate = false;
 
-      const vs = this.shaderFactory.createShader({
+      let vs: Shader | null = null;
+      let fs: Shader | null = null;
+
+      vs = this.shaderFactory.createShader({
         id: `${this.id}-vertex`,
         stage: 'vertex',
-        source: this.vs,
+        source: this.source || this.vs,
         debug: this.props.debugShaders
       });
 
-      const fs = this.fs
+      fs = this.fs
         ? this.shaderFactory.createShader({
             id: `${this.id}-fragment`,
             stage: 'fragment',
-            source: this.fs,
+            source: this.source || this.fs,
             debug: this.props.debugShaders
           })
         : null;
@@ -649,10 +673,10 @@ export class Model {
   }
 
   /** Throttle draw call logging */
-  _lastLogTime = 0;
-  _logOpen = false;
+  protected _lastLogTime = 0;
+  protected _logOpen = false;
 
-  _logDrawCallStart(): void {
+  protected _logDrawCallStart(): void {
     // IF level is 4 or higher, log every frame.
     const logDrawTimeout = log.level > 3 ? 0 : LOG_DRAW_TIMEOUT;
     if (log.level < 2 || Date.now() - this._lastLogTime < logDrawTimeout) {
@@ -665,7 +689,7 @@ export class Model {
     log.group(LOG_DRAW_PRIORITY, `>>> DRAWING MODEL ${this.id}`, {collapsed: log.level <= 2})();
   }
 
-  _logDrawCallEnd(): void {
+  protected _logDrawCallEnd(): void {
     if (this._logOpen) {
       const shaderLayoutTable = getDebugTableForShaderLayout(this.pipeline.shaderLayout, this.id);
 
@@ -690,7 +714,7 @@ export class Model {
   }
 
   protected _drawCount = 0;
-  _logFramebuffer(renderPass: RenderPass): void {
+  protected _logFramebuffer(renderPass: RenderPass): void {
     const debugFramebuffers = log.get('framebuffer');
     this._drawCount++;
     // Update first 3 frames and then every 60 frames
@@ -705,7 +729,7 @@ export class Model {
     }
   }
 
-  _getAttributeDebugTable(): Record<string, Record<string, unknown>> {
+  protected _getAttributeDebugTable(): Record<string, Record<string, unknown>> {
     const table: Record<string, Record<string, unknown>> = {};
     for (const [name, attributeInfo] of Object.entries(this._attributeInfos)) {
       table[attributeInfo.location] = {
@@ -733,7 +757,7 @@ export class Model {
   }
 
   // TODO - fix typing of luma data types
-  _getBufferOrConstantValues(attribute: Buffer | TypedArray, dataType: any): string {
+  protected _getBufferOrConstantValues(attribute: Buffer | TypedArray, dataType: any): string {
     const TypedArrayConstructor = getTypedArrayFromDataType(dataType);
     const typedArray =
       attribute instanceof Buffer ? new TypedArrayConstructor(attribute.debugData) : attribute;
