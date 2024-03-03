@@ -163,7 +163,7 @@ test.skip('picking#isVertexPicked(highlightedObjectColor invalid)', async t => {
         highlightedObjectColor: testCase.highlightedObjectColor
       });
 
-      transform.model.setUniforms(uniforms);
+      transform.model.setUniformsWebGL(uniforms);
       transform.run();
 
       const expectedData = testCase.isPicked;
@@ -219,7 +219,7 @@ test.skip('picking#picking_setPickingColor', async t => {
         pickingThreshold: testCase.pickingThreshold
       });
 
-      transform.model.setUniforms(uniforms);
+      transform.model.setUniformsWebGL(uniforms);
       transform.run();
 
       const outData = await transform.readAsync('rgbColorASelected');

@@ -27,6 +27,8 @@ export type ShaderModule<
   uniforms?: UniformsT;
 
   name: string;
+
+  wgsl?: string;
   fs?: string;
   vs?: string;
 

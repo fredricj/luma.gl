@@ -157,7 +157,7 @@ export default class AppAnimationLoopTemplate extends AnimationLoopTemplate {
       clearColor: [0, 0, 0, 1]
       // clearDepth: true
     });
-    this.cloud.setUniforms({
+    this.cloud.setUniformsWebGL({
       uTime: tick / 100,
       uMVP: this.mvpMat
     });

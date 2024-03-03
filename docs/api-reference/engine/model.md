@@ -8,7 +8,6 @@ The `Model` class is the centerpiece of the luma.gl API. It brings together all 
 - **bindings** these can reference textures and uniform buffers
 - **uniforms** WebGL only uniforms
 - **shader module injection**
-- **shader transpilation****
 - **debugging** - Detailed debug logging of draw calls
 
 The `Model` class integrates with 
@@ -29,8 +28,13 @@ Create model object by passing shaders, uniforms, geometry and render it by pass
 import {Model, CubeGeometry} from `@luma.gl/engine`;
 // construct the model.
 const model = new Model(device, {
-  vs: VERTEX_SHADER,
-  fs: FRAGMENT_SHADER,
+  // WGSL code for running under WebGPU
+  source: WGSL_VERTEX_AND_FRAGMENT_SHADER,
+  vsEntryPoint: 'vertexMain',
+  fsEntryPoint: 'fragmentMain',
+  // GLSL code for running under WEBGL
+  vs: GLSL_VERTEX_SHADER,
+  fs: GLSL_FRAGMENT_SHADER,
   geometry: new CubeGeometry(),
   bindings: {
     uSampler: texture

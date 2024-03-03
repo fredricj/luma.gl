@@ -62,7 +62,7 @@ type AssembleStageOptions = {
   source: string;
   stage: 'vertex' | 'fragment';
   /** Modules to be injected */
-  modules: any[];
+  modules: ShaderModuleInstance[];
   /** Defines to be injected */
   defines?: Record<string, ShaderDefine>;
   /** Hook functions */
@@ -231,14 +231,13 @@ export function assembleWGSLShader(platformInfo: PlatformInfo, options: Assemble
     }
   }
 
-  // TODO - hack until shadertool modules support WebGPU
-  const modulesToInject = platformInfo.type !== 'webgpu' ? modules : [];
-
-  for (const module of modulesToInject) {
+  // Add module code at the top of the sahder
+  for (const module of modules) {
     if (log) {
       module.checkDeprecations(coreSource, log);
     }
-    const moduleSource = module.getModuleSource(stage, 'wgsl');
+    const type = platformInfo.type === 'webgpu' ? 'wgsl' : stage;
+    const moduleSource = module.getModuleSource(type);
     // Add the module source, and a #define that declares it presence
     assembledSource += moduleSource;
 
@@ -265,6 +264,7 @@ export function assembleWGSLShader(platformInfo: PlatformInfo, options: Assemble
   assembledSource += getShaderHooks(hookFunctionMap[stage], hookInjections);
 
   // Add the version directive and actual source of this shader
+  assembledSource += `// ----- MAIN SHADER -------------------------\n`;
   assembledSource += coreSource;
 
   // Apply any requested shader injections

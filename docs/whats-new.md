@@ -59,14 +59,22 @@ On the upside this means that all features requiring WebGL 2 are now available a
 **`@luma.gl/core`**
 
 - Exports the new `Device` class is the entry point to the luma.gl API, used to create other GPU resources.
+- New `CompilerMessage` type and `formatCompilerLog` function for portable shader log handling.
 
 **`@luma.gl/engine`**
 
-- NEW: Scenegraph classes: `ModelNode`, `GroupNode`, `ScenegraphNode`, moved from `@luma.gl/experimental`.
-- NEW: `ShaderInputs` - Class that manages uniform buffers for a `Model`
-- NEW: `ShaderFactory` - Creates and caches reusable `Shader` resources
-- NEW: `AnimationLoopTemplate` - Helper class for writing cleaner demos and applications in TypeScript.
-- New `Computation` - Class that manages a `ComputePipeline` similar to `Model` and `Transform`.
+- New `ShaderInputs` - Class that manages uniform buffers for a `Model`
+- New `AnimationLoopTemplate` - Helper class for writing cleaner demos and applications in TypeScript.
+- New `ShaderFactory` - Creates and caches reusable `Shader` resources
+-  `ModelNode`, `GroupNode`, `ScenegraphNode` - Scenegraph classes are now exported from `@luma.gl/engine`.
+
+WebGL 2 features:
+- New `BufferTransform` - Simple class for GPU compute with `Buffers`
+- New `TextureTransform` - Simple class for GPU compute with `Textures`
+
+WebGPU features:
+- New `Computation` - Class that manages a WebGPU `ComputePipeline` (see `Model` and `Transform`).
+- New `ModelProps.source` - Models can now be created using WGSL shader source.
 
 **`@luma.gl/gltf`**
 
@@ -74,9 +82,8 @@ On the upside this means that all features requiring WebGL 2 are now available a
 
 **`@luma.gl/shadertools`**
 
-- All shader modules now use uniform buffers.
 - New `ShaderAssembler` class that provides a clean entry point to the shader module system.
-- New `CompilerMessage` type and `formatCompilerLog` function for portable shader log handling.
+- All shader modules now use uniform buffers.
 - Shader assembly now supports WGSL and single shader source (compute or single vertex+fragment WGSL shaders)
 
 **`@luma.gl/webgl`** 

@@ -12,6 +12,7 @@ let index = 1;
 /** An initialized ShaderModule, ready to use with `assembleShaders()` */
 export class ShaderModuleInstance {
   name: string;
+  wgsl?: string;
   vs?: string;
   fs?: string;
   getModuleUniforms: Function;
@@ -57,6 +58,7 @@ export class ShaderModuleInstance {
   constructor(props: ShaderModule) {
     const {
       name,
+      wgsl,
       vs,
       fs,
       dependencies = [],
@@ -69,6 +71,7 @@ export class ShaderModuleInstance {
 
     assert(typeof name === 'string');
     this.name = name;
+    this.wgsl = wgsl;
     this.vs = vs;
     this.fs = fs;
     this.getModuleUniforms = getUniforms;
@@ -83,9 +86,13 @@ export class ShaderModuleInstance {
   }
 
   // Extracts the source code chunk for the specified shader type from the named shader module
-  getModuleSource(stage: 'vertex' | 'fragment'): string {
+  getModuleSource(stage: 'vertex' | 'fragment' | 'wgsl'): string {
     let moduleSource;
+
     switch (stage) {
+      case 'wgsl':
+        moduleSource = this.wgsl || '';
+        break;
       case 'vertex':
         moduleSource = this.vs || '';
         break;
@@ -98,13 +105,8 @@ export class ShaderModuleInstance {
 
     const moduleName = this.name.toUpperCase().replace(/[^0-9a-z]/gi, '_');
     return `\
-// ----- MODULE ${this.name} ---------------
-
-#define MODULE_${moduleName}
-${moduleSource}\
-
-
-`;
+// ----- MODULE ${moduleName} ---------------
+${moduleSource}`;
   }
 
   getUniforms(userProps: Record<string, any>, uniforms: Record<string, any>): Record<string, any> {

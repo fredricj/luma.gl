@@ -168,13 +168,13 @@ export default class AppAnimationLoopTemplate extends AnimationLoopTemplate {
       // clearDepth: true
     });
 
-    this.cube.setUniforms({
+    this.cube.setUniformsWebGL({
       uView: view,
       uProjection: projection
     });
     this.cube.draw(renderPass);
 
-    this.prism.setUniforms({
+    this.prism.setUniformsWebGL({
       uEyePosition: eyePosition,
       uView: view,
       uProjection: projection,

@@ -12,22 +12,14 @@ export type DirlightProps = {
 
 export type DirlightUniforms = DirlightProps;
 
-// TODO
-export const VS_WGSL = /* WGSL */ `\  
-void dirlight_setNormal(normal: vec3<f32>) {
-  dirlight_vNormal = normalize(normal);
+const WGSL = /* WGSL */ `\  
+struct DirlightUniforms {
+  lightDirection: vec3<f32>,
 }
-`;
 
-// TODO
-export const FS_WGSL = /* WGSL */ `\
-uniform dirlightUniforms {
-  vec3 lightDirection;
-} dirlight;
-
-// Returns color attenuated by angle from light source
-fn dirlight_filterColor(color: vec4<f32>, dirlightInputs): vec4<f32> {
-  const d: float = abs(dot(dirlight_vNormal, normalize(dirlight.lightDirection)));
+fn dirlight_filterColor(color: vec4<f32>, normal: vec3<f32>) -> vec4<f32> {
+  const dirlight_lightDirection = vec3<f32>(1, 1, 2);
+  let d: f32 = abs(dot(normal, normalize(dirlight_lightDirection)));
   return vec4<f32>(color.rgb * d, color.a);
 }
 `;
@@ -60,10 +52,9 @@ vec4 dirlight_filterColor(vec4 color) {
 export const dirlight: ShaderModule<DirlightProps, DirlightUniforms> = {
   name: 'dirlight',
   dependencies: [],
+  wgsl: WGSL,
   vs: VS_GLSL,
   fs: FS_GLSL,
-  // vs: {glsl: VS_GLSL, wgsl: VS_WGSL},
-  // fs: {glsl: FS_GLSL, wgsl: FS_WGSL},
   // fragmentInputs: [
   //   {
   //     name: 'dirlight_vNormal',

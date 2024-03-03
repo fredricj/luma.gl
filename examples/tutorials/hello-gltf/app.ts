@@ -59,7 +59,7 @@ export default class AppAnimationLoopTemplate extends AnimationLoopTemplate {
       const u_MVPMatrix = new Matrix4(projectionMatrix)
         .multiplyRight(viewMatrix)
         .multiplyRight(worldMatrix);
-      model.setUniforms({
+      model.setUniformsWebGL({
         u_Camera: eye,
         u_MVPMatrix,
         u_ModelMatrix: worldMatrix,

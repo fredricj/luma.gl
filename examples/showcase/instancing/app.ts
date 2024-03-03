@@ -14,29 +14,9 @@ A luma.gl <code>Cube</code>, rendering 65,536 instances in a
 single GPU draw call using instanced vertex attributes.
 `;
 
-// INSTANCE CUBE
-
 const random = makeRandomNumberGenerator();
 
-// WGSL
-
-// const VS_WGSL = /* WGSL */`\
-// void dirlight_setNormal(normal: vec3<f32>) {
-//   dirlight_vNormal = normalize(normal);
-// }
-// `;
-
-// const FS_WGSL = /* WGSL */`\
-// uniform dirlightUniforms {
-//   vec3 lightDirection;
-// } dirlight;
-
-// // Returns color attenuated by angle from light source
-// fn dirlight_filterColor(color: vec4<f32>, dirlightInputs): vec4<f32> {
-//   const d: float = abs(dot(dirlight_vNormal, normalize(dirlight.lightDirection)));
-//   return vec4<f32>(color.rgb * d, color.a);
-// }
-// `;
+// INSTANCE CUBE
 
 const WGSL = /* WGSL */ `\
 struct AppUniforms {
@@ -79,18 +59,6 @@ fn vertexMain(inputs: VertexInputs) -> FragmentInputs {
   let offset = vec4<f32>(inputs.instanceOffsets, sin((app.time + delta) * 0.1) * 16.0, 0);
   outputs.Position = app.projectionMatrix * app.viewMatrix * (app.modelMatrix * inputs.positions + offset);
   return outputs;
-}
-
-struct DirlightUniforms {
-  lightDirection: vec3<f32>,
-}
-
-// @binding(1) @group(0) var<uniform> dirlight : DirlightUniforms;
-
-fn dirlight_filterColor(color: vec4<f32>, normal: vec3<f32>) -> vec4<f32> {
-  const dirlight_lightDirection = vec3<f32>(1, 1, 2);
-  let d: f32 = abs(dot(normal, normalize(dirlight_lightDirection)));
-  return vec4<f32>(color.rgb * d, color.a);
 }
 
 @fragment
@@ -195,7 +163,7 @@ class InstancedCube extends Model {
       fs: FS_GLSL,
       vsEntryPoint: 'vertexMain',
       fsEntryPoint: 'fragmentMain',
-      modules: device.info.type !== 'webgpu' ? [dirlight, picking] : [],
+      modules: device.info.type === 'webgpu' ? [dirlight] : [dirlight, picking],
       instanceCount: SIDE * SIDE,
       geometry: new CubeGeometry({indices: true}),
       bufferLayout: [

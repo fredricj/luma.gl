@@ -49,7 +49,7 @@ export type ComputationProps = Omit<ComputePipelineProps, 'shader'> & {
  * - automatically reuses pipelines (programs) when possible
  * - automatically rebuilds pipelines if necessary to accommodate changed settings
  * shadertools integration
- * - accepts modules and performs shader transpilation
+ * - accepts modules
  */
 export class Computation {
   static defaultProps: Required<ComputationProps> = {

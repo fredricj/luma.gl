@@ -87,7 +87,7 @@ export type ModelProps = Omit<RenderPipelineProps, 'vs' | 'fs'> & {
  * - automatically reuses pipelines (programs) when possible
  * - automatically rebuilds pipelines if necessary to accommodate changed settings
  * shadertools integration
- * - accepts modules and performs shader transpilation
+ * - accepts modules
  */
 export class Model {
   static defaultProps: Required<ModelProps> = {
@@ -121,7 +121,7 @@ export class Model {
   readonly id: string;
 
   /** WGSL source */
-  readonly source: string
+  readonly source: string;
   /** GLSL/WGSL vs */
   readonly vs: string;
   /** GLSL/WGSL fs */
@@ -531,7 +531,7 @@ export class Model {
    * @param uniforms
    * @returns self for chaining
    */
-  setUniforms(uniforms: Record<string, UniformValue>): void {
+  setUniformsWebGL(uniforms: Record<string, UniformValue>): void {
     if (!isObjectEmpty(uniforms)) {
       this.pipeline.setUniformsWebGL(uniforms);
       Object.assign(this.uniforms, uniforms);
@@ -643,14 +643,15 @@ export class Model {
         debug: this.props.debugShaders
       });
 
-      fs = this.fs
-        ? this.shaderFactory.createShader({
-            id: `${this.id}-fragment`,
-            stage: 'fragment',
-            source: this.source || this.fs,
-            debug: this.props.debugShaders
-          })
-        : null;
+      fs =
+        this.source || this.fs
+          ? this.shaderFactory.createShader({
+              id: `${this.id}-fragment`,
+              stage: 'fragment',
+              source: this.source || this.fs,
+              debug: this.props.debugShaders
+            })
+          : null;
 
       this.pipeline = this.pipelineFactory.createRenderPipeline({
         ...this.props,

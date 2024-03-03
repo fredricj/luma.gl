@@ -37,7 +37,7 @@ export function getShaderLayoutFromWGSL(source: string): ShaderLayout {
   const vertex = parsedWGSL.entry.vertex[0]; // "main"
 
   // Vertex shader inputs
-  const attributeCount = vertex.inputs.length; // inputs to "main"
+  const attributeCount = vertex?.inputs?.length; // inputs to "main"
   for (let i = 0; i < attributeCount; i++) {
     const wgslAttribute = vertex.inputs[i];
 

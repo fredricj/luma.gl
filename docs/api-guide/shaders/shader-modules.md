@@ -1,18 +1,46 @@
 # Shader Modules
 
-luma.device provides a GLSL shader module system (through the `@luma.device/shadertools` module) that allows you build modular shaders. The system is built around a GLSL "assembler", and addresses the lack of a module/import system in the GLSL language. The shader assembler allows you to import chunks of reusable shader code from separately defined shader fragments into your shader program source code, which allows you to organize your shader code in reusable modules.
+luma.gl provides a shader module system (`@luma.gl/shadertools`) that allows you to use prebuilt modular shaders in your shader code and also package your own shader code for reuse. 
 
-- Enables you to import and "inject" prepackaged modules of shader code into your shaders.
+The system supports both WGSL and GLSL and allows you to import chunks of reusable shader code from separately defined shader fragments into your shader program source code, which allows you to organize your shader code in reusable modules.
+
+The shader module system is built around an "assembler", and addresses the lack of a module/import system in the WGSL / GLSL languages. 
+
+
+- Enables you to include code from prepackaged modules of shader code into your shaders.
+- Enables you to "inject" shader code into your shaders.
 - Allows you to package up reusable GLSL code as shader modules.
 - Adds GPU detection and a measure of portability your shaders.
 
 ## Usage
 
+Most applications call the shader assembler indirectly by supplying a `ModelProps.modules` parameter to the `Model` constructor.
+
+```ts
+// Import the color picking module
+import {picking} from '@luma.gl/shadertools';
+import {ShaderAssembler} from '@luma.gl/shadertools';
+
+const shaderAssembler = ShaderAssembler.getDefaultShaderAssembler();
+const {vs, fs, getUniforms, moduleMap} = shaderAssembler.assembleShaderPair(device, {
+  fs: '...',
+  vs: '...',
+  modules: [shaderModule],
+  ...
+})
+```
+
+For full control, is possible to use the shader assembler directly:
+
 To add/inject existing modules into your shaders, just add the modules parameter to your `assembleShaders` call:
 
-```typescript
-import {shaderModule} from 'library-of-shader-modules';
-const {vs, fs, getUniforms, moduleMap} = assembleShaders(device, {
+```ts
+// Import the color picking module
+import {picking} from '@luma.gl/shadertools';
+import {ShaderAssembler} from '@luma.gl/shadertools';
+
+const shaderAssembler = ShaderAssembler.getDefaultShaderAssembler();
+const {vs, fs, getUniforms, moduleMap} = shaderAssembler.assembleShaderPair(device, {
   fs: '...',
   vs: '...',
   modules: [shaderModule],
@@ -22,8 +50,10 @@ const {vs, fs, getUniforms, moduleMap} = assembleShaders(device, {
 
 To create a new shader module, you need to create a descriptor object.
 
-```typescript
-const MY_SHADER_MODULE = {
+```ts
+import type {ShaderModule} from '@luma.gl/shadertools';
+
+const myShaderModule: ShaderModule = {
   name: 'my-shader-module',
   vs: ....
   fs: null,
@@ -36,7 +66,7 @@ const MY_SHADER_MODULE = {
 
 This object can be used as shader module directly:
 
-```typescript
+```ts
 assembleShaders(device, {..., modules: [MY_SHADER_MODULE]});
 ```
 
@@ -49,105 +79,3 @@ A shader module is either:
 - **Generic** - a set of generic GLSL functions that can be included either in a fragment shader or a vertex shader (or both). The `fp64` module is a good example of this type of module.
 - **Functional** - Contains specific vertex and/or fragment shader "chunks", often set up so that the vertex shader part sets up a `varying` used by the fragment shader part.
 
-### Shader Module Descriptor
-
-To define a new shader module, you create a descriptor object that brings together all the necessary pieces:
-
-```typescript
-export const MY_SHADER_MODULE = {
-  name: 'my-shader-module',
-  vs: '...',
-  fs: '...',
-  inject: {},
-  dependencies: [],
-  deprecations: [],
-  getUniforms
-};
-```
-
-Descriptor objects can define the following fields:
-
-- `name` (_String_, Required) - The name of the shader module.
-- `vs` - (String | null)
-- `fs` - (String | null)
-- `getUniforms` JavaScript function that maps JavaScript parameter keys to uniforms used by this module
-- `uniforms` (_Object_) - a light alternative to `getUniforms`, see below
-- `inject` (_Object_) - injections the module will make into shader hooks, see below
-- `dependencies` (_Array_) - a list of other shader modules that this module is dependent on
-- `deprecations` (_Array_) - a list of deprecated APIs.
-
-If `deprecations` is supplied, `assembleShaders` will scan GLSL source code for the deprecated constructs and issue a console warning if found. Each API is described in the following format:
-
-- `type`: `uniform <type>` or `function`
-- `old`: name of the deprecated uniform/function
-- `new`: name of the new uniform/function
-- `deprecated`: whether the old API is still supported.
-
-### GLSL Code
-
-The GLSL code for a shader module typically contains:
-
-- a mix of uniform and varying declarations
-- one or more GLSL function definitions
-
-### getUniforms
-
-Each shader module provides a method to get a map of uniforms for the shader. This function will be called with two arguments:
-
-- `opts` - the module settings to update. This argument may not be provided when `getUniforms` is called to generate a set of default uniform values.
-- `context` - the uniforms generated by this module's dependencies.
-
-The function should return a JavaScript object with keys representing uniform names and values representing uniform values.
-
-The function should expect the shape of the dependency uniforms to vary based on what's passed in `opts`. This behavior is intended because we only want to recalculate a uniform if the uniforms that it depends on are changed. An example is the `project` and `project64` modules in deck.device. When `opts.viewport` is provided, `project64` will receive the updated projection matrix generated by the `project` module. If `opts.viewport` is empty, then the `project` module generates nothing and so should `project64`.
-
-### uniforms
-
-If the uniforms of this module can be directly pulled from user settings, they may declaratively defined by a `uniforms` object:
-
-```typescript
-{
-  name: 'my-shader-module',
-  uniforms: {
-    strength: {type: 'number', value: 1, min: 0, max: 1},
-    center: [0.5, 0.5]
-  }
-}
-```
-
-At runtime, this map will be used to generate the uniforms needed by the shaders. If either `strength` or `center` is present in the user's module settings, then the user's value will be used; otherwise, the default value in the original definition will be used.
-
-Each uniform definition may contain the following fields:
-
-- `type` (_String_) - one of `number`, `boolean`, `array` or `object`
-- `value` - the default value of this uniform
-
-With `type: 'number'`, the following additional fields may be added for validation:
-
-- `min` (_Number_)
-- `max` (_Number_)
-
-Note: `uniforms` is ignored if `getUniforms` is provided.
-
-## inject
-
-A map of hook function signatures to either the injection code string, or an object containing the injection code and an `order` option indicating ordering within the hook function. See [assembleShaders]( /docs/api-reference/shadertools/shader-assembler) documentation for more information on shader hooks.
-
-For example:
-
-```typescript
-{
-  picking: {
-    'vs:VERTEX_HOOK_FUNCTION': 'picking_setPickingColor(color.rgb);',
-    'fs:FRAGMENT_HOOK_FUNCTION': {
-      injection: 'color = picking_filterColor(color);',
-      order: Number.POSITIVE_INFINITY
-    },
-    'fs:#main-end': 'gl_FragColor = picking_filterColor(gl_FragColor);'
-  }
-}
-```
-
-## GLSL Versions
-
-Shader modules will undergo some basic text transformations in order to match the GLSL version of the shaders they are injected into. These transformations are generally limited to the naming of input variables, output variables and texture sampling functions. See [assembleShaders]( /docs/api-reference/shadertools/shader-assembler) documentation for more information.
