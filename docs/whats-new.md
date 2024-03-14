@@ -2,30 +2,13 @@
 
 *This page contains news for recent luma.gl releases. For older releases (through v8.5) refer to the  [Legacy What's New](/docs/legacy/legacy-upgrade-guide) page.*
 
-## Version 9.1 (In Development)
-
-Target Date: Q2 2024
-
-- Production quality (non-experimental) WebGPU backend.
-
-**@luma.gl/core**
-
-- `Texture` class has been refactored. Textures no longer accept promises, use `AsyncTexture` class instead.
-- New [`luma.attachDevice()`](/docs/api-reference/core/luma#attachdevice) method - A `Device` can now be attached to a `WebGL2RenderingContext` without calling `WebGLDevice.attach()`.
-
-**@luma.gl/engine**
-
-- New `AsyncTexture` class allows applications to create textures from a URL or Promise.
+For upcoming releases, please see our [roadmap](/docs/roadmap).
 
 ## Version 9.0
 
-Target Date: Feb 2024
+Release Date: March 12, 2024.
 
-:::caution
-luma.gl v9 contains significant API changes and requires existing luma.gl v8 applications to be [upgraded](/docs/upgrade-guide).
-:::
-
-luma.gl v9 is a major release that adds experimental WebGPU support to the luma.gl API.
+luma.gl v9 is a major release that adds WebGPU support to the luma.gl API.
 
 ### WebGPU Support
 
@@ -43,7 +26,7 @@ luma.gl v9 drops support for WebGL 1 functionality.
 - **GLSL 1.00** is  no longer supported. GLSL shaders need to be ported to **GLSL 3.00**.
 - **headless-gl** The Node.js WebGL 1 integration is no longer supported
 
-On the upside this means that all features requiring WebGL 2 are now available and luma.gl also brings support for a range of new WebGL 2 extensions, see more below.
+Features requiring WebGL 2 are now always available. A range of new WebGL 2 extensions are now also supported, see more below.
 
 ### New module structure
 
